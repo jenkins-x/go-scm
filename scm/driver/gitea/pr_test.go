@@ -154,3 +154,18 @@ func TestPullCreate(t *testing.T) {
 		t.Errorf("Expect Not Supported error")
 	}
 }
+
+func TestPullUpdate(t *testing.T) {
+	client, _ := New("https://try.gitea.io")
+	input := &scm.PullRequestInput{
+		Title: "Gitea feature",
+		Body:  "New Gitea feature",
+		Head:  "new-feature",
+		Base:  "master",
+	}
+
+	_, _, err := client.PullRequests.Update(context.Background(), "go-gitea/gitea", 1, input)
+	if err != scm.ErrNotSupported {
+		t.Errorf("Expect Not Supported error")
+	}
+}

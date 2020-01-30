@@ -189,3 +189,40 @@ func TestPullCreate(t *testing.T) {
 	t.Run("Request", testRequest(res))
 	t.Run("Rate", testRate(res))
 }
+
+func TestPullUpdate(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.github.com").
+		Patch("/repos/octocat/hello-world/pulls/1").
+		Reply(201).
+		Type("application/json").
+		SetHeaders(mockHeaders).
+		File("testdata/pr_update.json")
+
+	input := &scm.PullRequestInput{
+		Title: "New title here",
+		Body:  "New body here",
+		Head:  "octocat:new-feature",
+		Base:  "master",
+	}
+
+	client := NewDefault()
+
+	got, res, err := client.PullRequests.Update(context.Background(), "octocat/hello-world", 1, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := new(scm.PullRequest)
+	raw, err := ioutil.ReadFile("testdata/pr_update.json.golden")
+	json.Unmarshal(raw, want)
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+
+	t.Run("Request", testRequest(res))
+	t.Run("Rate", testRate(res))
+}

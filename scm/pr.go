@@ -128,6 +128,9 @@ type (
 
 		// Create creates a new pull request in a repo.
 		Create(context.Context, string, *PullRequestInput) (*PullRequest, *Response, error)
+
+		// Update updates an existing pull request.
+		Update(context.Context, string, int, *PullRequestInput) (*PullRequest, *Response, error)
 	}
 )
 

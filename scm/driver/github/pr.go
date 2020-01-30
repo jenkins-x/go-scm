@@ -65,6 +65,20 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 	return convertPullRequest(out), res, err
 }
 
+func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
+	path := fmt.Sprintf("repos/%s/pulls/%d", repo, number)
+	in := &prInput{
+		Title: input.Title,
+		Head:  input.Head,
+		Base:  input.Base,
+		Body:  input.Body,
+	}
+
+	out := new(pr)
+	res, err := s.client.do(ctx, "PATCH", path, in, out)
+	return convertPullRequest(out), res, err
+}
+
 type prBranch struct {
 	Ref  string     `json:"ref"`
 	Sha  string     `json:"sha"`

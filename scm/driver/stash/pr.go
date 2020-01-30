@@ -123,6 +123,10 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 	return nil, nil, scm.ErrNotSupported
 }
 
+func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
+	return nil, nil, scm.ErrNotSupported
+}
+
 type pullRequest struct {
 	ID          int    `json:"id"`
 	Version     int    `json:"version"`

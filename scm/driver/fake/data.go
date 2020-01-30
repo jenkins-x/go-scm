@@ -23,6 +23,7 @@ type Data struct {
 	Commits                    map[string]*scm.Commit
 	TestRef                    string
 	PullRequestsCreated        map[int]*scm.PullRequestInput
+	PullRequestsUpdated        map[int]*scm.PullRequestInput
 	PullRequestID              int
 
 	//All Labels That Exist In The Repo
@@ -80,6 +81,7 @@ func NewData() *Data {
 		PullRequestLabelsRemoved:  []string{},
 		PullRequestLabelsExisting: []string{},
 		PullRequestsCreated:       map[int]*scm.PullRequestInput{},
+		PullRequestsUpdated:       map[int]*scm.PullRequestInput{},
 		Reviews:                   map[int][]*scm.Review{},
 		Statuses:                  map[string][]*scm.Status{},
 		IssueEvents:               map[int][]*scm.ListedIssueEvent{},

@@ -107,3 +107,18 @@ func TestPullCreate(t *testing.T) {
 		t.Errorf("Expect Not Supported error")
 	}
 }
+
+func TestPullUpdate(t *testing.T) {
+	client, _ := New("https://api.bitbucket.org")
+	input := &scm.PullRequestInput{
+		Title: "Bitbucket feature",
+		Body:  "New Bitbucket feature",
+		Head:  "new-feature",
+		Base:  "master",
+	}
+
+	_, _, err := client.PullRequests.Update(context.Background(), "atlassian/atlaskit", 1, input)
+	if err != scm.ErrNotSupported {
+		t.Errorf("Expect Not Supported error")
+	}
+}

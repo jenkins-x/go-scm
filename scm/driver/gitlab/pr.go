@@ -146,6 +146,20 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 	return convertPullRequest(out), res, err
 }
 
+func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
+	path := fmt.Sprintf("api/v4/projects/%s/merge_requests/%d", encode(repo), number)
+	in := &prInput{
+		Title:        input.Title,
+		SourceBranch: input.Head,
+		TargetBranch: input.Base,
+		Description:  input.Body,
+	}
+
+	out := new(pr)
+	res, err := s.client.do(ctx, "PATCH", path, in, out)
+	return convertPullRequest(out), res, err
+}
+
 type pr struct {
 	Number int    `json:"iid"`
 	Sha    string `json:"sha"`

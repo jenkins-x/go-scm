@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -142,4 +143,38 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 	f.PullRequestsCreated[f.PullRequestID] = input
 	f.PullRequests[f.PullRequestID] = answer
 	return answer, nil, nil
+}
+
+func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
+	f := s.data
+	originalPR := f.PullRequests[number]
+	if originalPR != nil {
+		// Make a copy of the original PR and modify it.
+		originalAsJSON, err := json.Marshal(originalPR)
+		if err != nil {
+			return nil, nil, err
+		}
+		updatedPR := &scm.PullRequest{}
+		err = json.Unmarshal(originalAsJSON, updatedPR)
+		if err != nil {
+			return nil, nil, err
+		}
+		if input.Title != "" && input.Title != updatedPR.Title {
+			updatedPR.Title = input.Title
+		}
+		if input.Body != "" && input.Body != updatedPR.Body {
+			updatedPR.Body = input.Body
+		}
+		if input.Base != "" && input.Base != updatedPR.Base.Ref {
+			updatedPR.Base.Ref = input.Base
+		}
+		if input.Head != "" && input.Head != updatedPR.Head.Ref {
+			updatedPR.Head.Ref = input.Head
+		}
+		f.PullRequests[number] = updatedPR
+		f.PullRequestsUpdated[number] = input
+		return updatedPR, nil, nil
+	}
+
+	return nil, nil, fmt.Errorf("could not find pull request %d", number)
 }
