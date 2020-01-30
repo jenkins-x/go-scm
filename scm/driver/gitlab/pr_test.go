@@ -282,19 +282,21 @@ func TestPullCommentDelete(t *testing.T) {
 func TestPullCreate(t *testing.T) {
 	defer gock.Off()
 
-	gock.New("https://gitlab.com").
-		Post("/api/v4/projects/diaspora/diaspora/merge_requests").
-		Reply(201).
-		Type("application/json").
-		SetHeaders(mockHeaders).
-		File("testdata/pr_create.json")
-
 	input := &scm.PullRequestInput{
 		Title: "Amazing new feature",
 		Body:  "Please pull these awesome changes in!",
 		Head:  "test1",
 		Base:  "master",
 	}
+
+	gock.New("https://gitlab.com").
+		Post("/api/v4/projects/diaspora/diaspora/merge_requests").
+		JSON(convertToPRInput(input)).
+		Reply(201).
+		Type("application/json").
+		SetHeaders(mockHeaders).
+		File("testdata/pr_create.json")
+
 
 	client := NewDefault()
 	got, res, err := client.PullRequests.Create(context.Background(), "diaspora/diaspora", input)
@@ -318,19 +320,20 @@ func TestPullCreate(t *testing.T) {
 func TestPullUpdate(t *testing.T) {
 	defer gock.Off()
 
-	gock.New("https://gitlab.com").
-		Patch("/api/v4/projects/diaspora/diaspora/merge_requests/1").
-		Reply(201).
-		Type("application/json").
-		SetHeaders(mockHeaders).
-		File("testdata/pr_update.json")
-
 	input := &scm.PullRequestInput{
 		Title: "New title here",
 		Body:  "New body here",
 		Head:  "test1",
 		Base:  "master",
 	}
+
+	gock.New("https://gitlab.com").
+		Put("/api/v4/projects/diaspora/diaspora/merge_requests/1").
+		JSON(convertToPRInput(input)).
+		Reply(201).
+		Type("application/json").
+		SetHeaders(mockHeaders).
+		File("testdata/pr_update.json")
 
 	client := NewDefault()
 	got, res, err := client.PullRequests.Update(context.Background(), "diaspora/diaspora", 1, input)

@@ -134,12 +134,7 @@ func (s *pullService) Close(ctx context.Context, repo string, number int) (*scm.
 
 func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
 	path := fmt.Sprintf("api/v4/projects/%s/merge_requests", encode(repo))
-	in := &prInput{
-		Title:        input.Title,
-		SourceBranch: input.Head,
-		TargetBranch: input.Base,
-		Description:  input.Body,
-	}
+	in := convertToPRInput(input)
 
 	out := new(pr)
 	res, err := s.client.do(ctx, "POST", path, in, out)
@@ -148,15 +143,10 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 
 func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
 	path := fmt.Sprintf("api/v4/projects/%s/merge_requests/%d", encode(repo), number)
-	in := &prInput{
-		Title:        input.Title,
-		SourceBranch: input.Head,
-		TargetBranch: input.Base,
-		Description:  input.Body,
-	}
+	in := convertToPRInput(input)
 
 	out := new(pr)
-	res, err := s.client.do(ctx, "PATCH", path, in, out)
+	res, err := s.client.do(ctx, "PUT", path, in, out)
 	return convertPullRequest(out), res, err
 }
 
@@ -197,10 +187,19 @@ type change struct {
 }
 
 type prInput struct {
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	SourceBranch string `json:"source_branch"`
-	TargetBranch string `json:"target_branch"`
+	Title        string `json:"title,omitempty"`
+	Description  string `json:"description,omitempty"`
+	SourceBranch string `json:"source_branch,omitempty"`
+	TargetBranch string `json:"target_branch,omitempty"`
+}
+
+func convertToPRInput(from *scm.PullRequestInput) *prInput {
+	return &prInput{
+		Title:        from.Title,
+		Description:  from.Body,
+		SourceBranch: from.Head,
+		TargetBranch: from.Base,
+	}
 }
 
 func convertPullRequestList(from []*pr) []*scm.PullRequest {
