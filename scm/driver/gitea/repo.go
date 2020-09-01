@@ -18,8 +18,18 @@ type repositoryService struct {
 	client *wrapper
 }
 
-func (s *repositoryService) Create(context.Context, *scm.RepositoryInput) (*scm.Repository, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+func (s *repositoryService) Create(ctx context.Context, input *scm.RepositoryInput) (*scm.Repository, *scm.Response, error) {
+	path := fmt.Sprintf("apis/v1/orgs/%s/repos", input.Namespace)
+
+	in := &repositoryInput{
+		Name:        input.Name,
+		Description: input.Description,
+		Private:     input.Private,
+	}
+
+	out := new(repository)
+	res, err := s.client.do(ctx, "POST", path, in, out)
+	return convertRepository(out), res, err
 }
 
 func (s *repositoryService) Fork(context.Context, *scm.RepositoryInput, string) (*scm.Repository, *scm.Response, error) {
@@ -27,11 +37,42 @@ func (s *repositoryService) Fork(context.Context, *scm.RepositoryInput, string) 
 }
 
 func (s *repositoryService) FindCombinedStatus(ctx context.Context, repo, ref string) (*scm.CombinedStatus, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+	statuses, res, err := s.ListStatus(ctx, repo, ref, scm.ListOptions{})
+	if err != nil {
+		return nil, res, err
+	}
+
+	combinedState := scm.StateUnknown
+
+	for _, s := range statuses {
+		// If we've still got a default state, or the state of the current status is worse than the current state, set it.
+		if combinedState == scm.StateUnknown || combinedState > s.State {
+			combinedState = s.State
+		}
+	}
+
+	return &scm.CombinedStatus{
+		State:    combinedState,
+		Sha:      ref,
+		Statuses: statuses,
+	}, res, err
 }
 
 func (s *repositoryService) FindUserPermission(ctx context.Context, repo string, user string) (string, *scm.Response, error) {
-	return "", nil, scm.ErrNotSupported
+	members, res, err := s.listRawCollaborators(ctx, repo)
+	if err != nil {
+		return "", res, err
+	}
+	for _, m := range members {
+		if m.Login == user {
+			if m.IsAdmin {
+				return scm.AdminPermission, res, nil
+			}
+			return scm.WritePermission, res, nil
+		}
+	}
+
+	return scm.NoPermission, res, nil
 }
 
 func (s *repositoryService) AddCollaborator(ctx context.Context, repo, user, permission string) (bool, bool, *scm.Response, error) {
@@ -42,12 +83,20 @@ func (s *repositoryService) IsCollaborator(ctx context.Context, repo, user strin
 	return false, nil, scm.ErrNotSupported
 }
 
+func (s *repositoryService) listRawCollaborators(ctx context.Context, repo string) ([]*member, *scm.Response, error) {
+	path := fmt.Sprintf("apis/v1/repos/%s/collaborators", repo)
+	out := []*member{}
+
+	res, err := s.client.do(ctx, "GET", path, nil, out)
+	return out, res, err
+}
+
 func (s *repositoryService) ListCollaborators(ctx context.Context, repo string, ops scm.ListOptions) ([]scm.User, *scm.Response, error) {
 	return nil, nil, scm.ErrNotSupported
 }
 
 func (s *repositoryService) ListLabels(ctx context.Context, repo string, _ scm.ListOptions) ([]*scm.Label, *scm.Response, error) {
-	path := fmt.Sprintf("repos/%s/labels", repo)
+	path := fmt.Sprintf("apis/v1/repos/%s/labels", repo)
 	out := []*label{}
 	res, err := s.client.do(ctx, "GET", path, nil, &out)
 	return convertLabelObjects(out), res, err
@@ -155,6 +204,12 @@ func (s *repositoryService) DeleteHook(ctx context.Context, repo string, id stri
 //
 // native data structures
 //
+
+type repositoryInput struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Private     bool   `json:"private"`
+}
 
 type (
 	// gitea repository resource.

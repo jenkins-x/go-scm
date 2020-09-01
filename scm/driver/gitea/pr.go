@@ -72,33 +72,73 @@ func (s *pullService) Merge(ctx context.Context, repo string, index int, options
 	return res, err
 }
 
-func (s *pullService) Update(ctx context.Context, repo string, number int, prInput *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+func (s *pullService) Update(ctx context.Context, repo string, number int, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
+	path := fmt.Sprintf("api/v1/repos/%s/pulls/%d", repo, number)
+	in := &prInput{}
+	if input.Title != "" {
+		in.Title = input.Title
+	}
+	if input.Body != "" {
+		in.Body = input.Body
+	}
+	if input.Base != "" {
+		in.Base = input.Base
+	}
+	if input.Head != "" {
+		in.Head = input.Head
+	}
+	out := new(pullRequest)
+	res, err := s.client.do(ctx, "PATCH", path, in, out)
+	return convertPullRequest(out), res, err
 }
 
-func (s *pullService) Close(context.Context, string, int) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+func (s *pullService) Close(ctx context.Context, repo string, number int) (*scm.Response, error) {
+	path := fmt.Sprintf("api/v1/repos/%s/pulls/%d", repo, number)
+	in := &closeReopenInput{
+		State: stateClosed,
+	}
+	return s.client.do(ctx, "PATCH", path, in, nil)
 }
 
-func (s *pullService) Reopen(context.Context, string, int) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+func (s *pullService) Reopen(ctx context.Context, repo string, number int) (*scm.Response, error) {
+	path := fmt.Sprintf("api/v1/repos/%s/pulls/%d", repo, number)
+	in := &closeReopenInput{
+		State: stateOpen,
+	}
+	return s.client.do(ctx, "PATCH", path, in, nil)
 }
 
 func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRequestInput) (*scm.PullRequest, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+	path := fmt.Sprintf("api/v1/repos/%s/pulls", repo)
+	in := &prInput{
+		Title: input.Title,
+		Body:  input.Body,
+		Base:  input.Base,
+		Head:  input.Head,
+	}
+	out := new(pullRequest)
+	res, err := s.client.do(ctx, "POST", path, in, out)
+	return convertPullRequest(out), res, err
 }
 
 func (s *pullService) RequestReview(ctx context.Context, repo string, number int, logins []string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+	return s.AssignIssue(ctx, repo, number, logins)
 }
 
 func (s *pullService) UnrequestReview(ctx context.Context, repo string, number int, logins []string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+	return s.UnassignIssue(ctx, repo, number, logins)
 }
 
 //
 // native data structures
 //
+
+type prInput struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+	Base  string `json:"base"`
+	Head  string `json:"head"`
+}
 
 type pullRequest struct {
 	ID         int        `json:"id"`

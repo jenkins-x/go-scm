@@ -1,0 +1,6 @@
+{
+  "title": "Add License File",
+  "body": "Using a BSD License",
+  "base": "master",
+  "head": "feature"
+}

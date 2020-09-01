@@ -69,11 +69,37 @@ func TestPullRequestList(t *testing.T) {
 	}
 }
 
-func TestPullRequestClose(t *testing.T) {
+func TestPullClose(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://try.gitea.io").
+		Patch("/api/v1/repos/go-gitea/gitea/pulls/1").
+		File("testdata/close_issue.json").
+		Reply(200).
+		Type("application/json").
+		File("testdata/pr.json")
+
 	client, _ := New("https://try.gitea.io")
 	_, err := client.PullRequests.Close(context.Background(), "go-gitea/gitea", 1)
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPullReopen(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://try.gitea.io").
+		Patch("/api/v1/repos/go-gitea/gitea/pulls/1").
+		File("testdata/reopen_issue.json").
+		Reply(200).
+		Type("application/json").
+		File("testdata/pr.json")
+
+	client, _ := New("https://try.gitea.io")
+	_, err := client.PullRequests.Reopen(context.Background(), "go-gitea/gitea", 1)
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -106,16 +132,34 @@ func TestPullRequestChanges(t *testing.T) {
 }
 
 func TestPullCreate(t *testing.T) {
-	client, _ := New("https://try.gitea.io")
+	defer gock.Off()
+
+	gock.New("https://try.gitea.io").
+		Post("/api/v1/repos/jcitizen/my-repo/pulls").
+		File("testdata/pr_create.json").
+		Reply(200).
+		Type("application/json").
+		File("testdata/pr.json")
+
 	input := &scm.PullRequestInput{
-		Title: "Gitea feature",
-		Body:  "New Gitea feature",
-		Head:  "new-feature",
+		Title: "Add License File",
+		Body:  "Using a BSD License",
+		Head:  "feature",
 		Base:  "master",
 	}
 
-	_, _, err := client.PullRequests.Create(context.Background(), "go-gitea/gitea", input)
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
+	client, _ := New("https://try.gitea.io")
+	got, _, err := client.PullRequests.Create(context.Background(), "jcitizen/my-repo", input)
+	if err != nil {
+		t.Error(err)
+	}
+
+	want := new(scm.PullRequest)
+	raw, _ := ioutil.ReadFile("testdata/pr.json.golden")
+	json.Unmarshal(raw, want)
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
 	}
 }
