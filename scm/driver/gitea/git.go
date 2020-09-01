@@ -17,7 +17,12 @@ type gitService struct {
 }
 
 func (s *gitService) FindRef(ctx context.Context, repo, ref string) (string, *scm.Response, error) {
-	return "", nil, scm.ErrNotSupported
+	path := fmt.Sprintf("api/v1/repos/%s/git/refs/%s", repo, ref)
+	var out struct {
+		Object map[string]string `json:"object"`
+	}
+	res, err := s.client.do(ctx, "GET", path, nil, &out)
+	return out.Object["sha"], res, err
 }
 
 func (s *gitService) CreateRef(ctx context.Context, repo, ref, sha string) (*scm.Reference, *scm.Response, error) {

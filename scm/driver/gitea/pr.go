@@ -5,15 +5,17 @@
 package gitea
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/jenkins-x/go-scm/scm"
 )
 
 type pullService struct {
-	client *wrapper
+	*issueService
 }
 
 func (s *pullService) Find(ctx context.Context, repo string, index int) (*scm.PullRequest, *scm.Response, error) {
@@ -23,10 +25,6 @@ func (s *pullService) Find(ctx context.Context, repo string, index int) (*scm.Pu
 	return convertPullRequest(out), res, err
 }
 
-func (s *pullService) FindComment(context.Context, string, int, int) (*scm.Comment, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
-
 func (s *pullService) List(ctx context.Context, repo string, opts scm.PullRequestListOptions) ([]*scm.PullRequest, *scm.Response, error) {
 	path := fmt.Sprintf("api/v1/repos/%s/pulls", repo)
 	out := []*pullRequest{}
@@ -34,41 +32,38 @@ func (s *pullService) List(ctx context.Context, repo string, opts scm.PullReques
 	return convertPullRequests(out), res, err
 }
 
-func (s *pullService) ListComments(context.Context, string, int, scm.ListOptions) ([]*scm.Comment, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
+func (s *pullService) ListChanges(ctx context.Context, repo string, number int, _ scm.ListOptions) ([]*scm.Change, *scm.Response, error) {
+	// Get the patch and then parse it.
+	path := fmt.Sprintf("api/v1/repos/%s/pulls/%d.patch", repo, number)
+	buf := new(bytes.Buffer)
+	res, err := s.client.do(ctx, "GET", path, nil, buf)
+	if err != nil {
+		return nil, res, err
+	}
+	changedFiles, _, err := gitdiff.Parse(buf)
+	if err != nil {
+		return nil, res, err
+	}
+	var changes []*scm.Change
+	for _, c := range changedFiles {
+		var linesAdded int64
+		var linesDeleted int64
 
-func (s *pullService) ListChanges(context.Context, string, int, scm.ListOptions) ([]*scm.Change, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
-
-func (s *pullService) ListLabels(context.Context, string, int, scm.ListOptions) ([]*scm.Label, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
-
-func (s *pullService) ListEvents(context.Context, string, int, scm.ListOptions) ([]*scm.ListedIssueEvent, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
-
-func (s *pullService) AddLabel(ctx context.Context, repo string, number int, label string) (*scm.Response, error) {
-	// TODO implement
-	return nil, scm.ErrNotSupported
-}
-
-func (s *pullService) DeleteLabel(ctx context.Context, repo string, number int, label string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
-}
-
-func (s *pullService) CreateComment(context.Context, string, int, *scm.CommentInput) (*scm.Comment, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
-}
-
-func (s *pullService) DeleteComment(context.Context, string, int, int) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
-}
-
-func (s *pullService) EditComment(ctx context.Context, repo string, number int, id int, input *scm.CommentInput) (*scm.Comment, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+		for _, tf := range c.TextFragments {
+			linesAdded += tf.LinesAdded
+			linesDeleted += tf.LinesDeleted
+		}
+		changes = append(changes, &scm.Change{
+			Path:         c.NewName,
+			PreviousPath: c.OldName,
+			Added:        c.IsNew,
+			Renamed:      c.IsRename,
+			Deleted:      c.IsDelete,
+			Additions:    int(linesAdded),
+			Deletions:    int(linesDeleted),
+		})
+	}
+	return changes, res, nil
 }
 
 func (s *pullService) Merge(ctx context.Context, repo string, index int, options *scm.PullRequestMergeOptions) (*scm.Response, error) {
@@ -86,14 +81,6 @@ func (s *pullService) Close(context.Context, string, int) (*scm.Response, error)
 }
 
 func (s *pullService) Reopen(context.Context, string, int) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
-}
-
-func (s *pullService) AssignIssue(ctx context.Context, repo string, number int, logins []string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
-}
-
-func (s *pullService) UnassignIssue(ctx context.Context, repo string, number int, logins []string) (*scm.Response, error) {
 	return nil, scm.ErrNotSupported
 }
 

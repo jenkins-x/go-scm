@@ -96,47 +96,12 @@ func TestPullRequestMerge(t *testing.T) {
 // pull request change sub-tests
 //
 
+// TODO: Actually write a real test for generating changes from a patch
 func TestPullRequestChanges(t *testing.T) {
 	client, _ := New("https://try.gitea.io")
 	_, _, err := client.PullRequests.ListChanges(context.Background(), "go-gitea/gitea", 1, scm.ListOptions{})
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
-	}
-}
-
-//
-// pull request comment sub-tests
-//
-
-func TestPullRequestCommentFind(t *testing.T) {
-	client, _ := New("https://try.gitea.io")
-	_, _, err := client.PullRequests.FindComment(context.Background(), "go-gitea/gitea", 1, 1)
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
-	}
-}
-
-func TestPullRequestCommentList(t *testing.T) {
-	client, _ := New("https://try.gitea.io")
-	_, _, err := client.PullRequests.ListComments(context.Background(), "go-gitea/gitea", 1, scm.ListOptions{})
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
-	}
-}
-
-func TestPullRequestCommentCreate(t *testing.T) {
-	client, _ := New("https://try.gitea.io")
-	_, _, err := client.PullRequests.CreateComment(context.Background(), "go-gitea/gitea", 1, &scm.CommentInput{})
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
-	}
-}
-
-func TestPullRequestCommentDelete(t *testing.T) {
-	client, _ := New("https://try.gitea.io")
-	_, err := client.PullRequests.DeleteComment(context.Background(), "go-gitea/gitea", 1, 1)
-	if err != scm.ErrNotSupported {
-		t.Errorf("Expect Not Supported error")
+	if err == scm.ErrNotSupported {
+		t.Errorf("Didn't expect Not Supported error")
 	}
 }
 

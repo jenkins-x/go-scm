@@ -58,6 +58,20 @@ type user struct {
 // native data structure conversion
 //
 
+func convertUsers(src []user) []scm.User {
+	answer := []scm.User{}
+	for _, u := range src {
+		user := convertUser(&u)
+		if user.Login != "" {
+			answer = append(answer, *user)
+		}
+	}
+	if len(answer) == 0 {
+		return nil
+	}
+	return answer
+}
+
 func convertUser(src *user) *scm.User {
 	return &scm.User{
 		Login:  userLogin(src),

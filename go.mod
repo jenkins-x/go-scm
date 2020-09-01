@@ -1,6 +1,7 @@
 module github.com/jenkins-x/go-scm
 
 require (
+	github.com/bluekeyes/go-gitdiff v0.4.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.3.0
 	github.com/h2non/gock v1.0.9

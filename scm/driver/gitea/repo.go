@@ -46,8 +46,11 @@ func (s *repositoryService) ListCollaborators(ctx context.Context, repo string, 
 	return nil, nil, scm.ErrNotSupported
 }
 
-func (s *repositoryService) ListLabels(context.Context, string, scm.ListOptions) ([]*scm.Label, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+func (s *repositoryService) ListLabels(ctx context.Context, repo string, _ scm.ListOptions) ([]*scm.Label, *scm.Response, error) {
+	path := fmt.Sprintf("repos/%s/labels", repo)
+	out := []*label{}
+	res, err := s.client.do(ctx, "GET", path, nil, &out)
+	return convertLabelObjects(out), res, err
 }
 
 func (s *repositoryService) Find(ctx context.Context, repo string) (*scm.Repository, *scm.Response, error) {

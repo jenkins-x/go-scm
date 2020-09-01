@@ -16,11 +16,34 @@ type organizationService struct {
 }
 
 func (s *organizationService) IsMember(ctx context.Context, org string, user string) (bool, *scm.Response, error) {
-	return false, nil, scm.ErrNotSupported
+	path := fmt.Sprintf("api/v1/orgs/%s/members/%s", org, user)
+	res, err := s.client.do(ctx, "GET", path, nil, nil)
+	if err != nil && res == nil {
+		return false, res, err
+	}
+	code := res.Status
+	if code == 204 {
+		return true, res, nil
+	} else if code == 404 {
+		return false, res, nil
+	} else if code == 302 {
+		return false, res, fmt.Errorf("requester is not %s org member", org)
+	}
+	// Should be unreachable.
+	return false, res, fmt.Errorf("unexpected status: %d", code)
 }
 
 func (s *organizationService) IsAdmin(ctx context.Context, org string, user string) (bool, *scm.Response, error) {
-	return false, nil, scm.ErrNotSupported
+	members, res, err := s.ListOrgMembers(ctx, org, scm.ListOptions{})
+	if err != nil {
+		return false, res, err
+	}
+	for _, m := range members {
+		if m.Login == user && m.IsAdmin {
+			return true, res, nil
+		}
+	}
+	return false, res, nil
 }
 
 func (s *organizationService) ListTeams(ctx context.Context, org string, ops scm.ListOptions) ([]*scm.Team, *scm.Response, error) {
@@ -32,7 +55,10 @@ func (s *organizationService) ListTeamMembers(ctx context.Context, id int, role 
 }
 
 func (s *organizationService) ListOrgMembers(ctx context.Context, org string, ops scm.ListOptions) ([]*scm.TeamMember, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+	path := fmt.Sprintf("api/v1/orgs/%s/members", org)
+	members := []*member{}
+	res, err := s.client.do(ctx, "GET", path, nil, members)
+	return convertMemberList(members), res, err
 }
 
 func (s *organizationService) Find(ctx context.Context, name string) (*scm.Organization, *scm.Response, error) {
@@ -57,6 +83,11 @@ type org struct {
 	Avatar string `json:"avatar_url"`
 }
 
+type member struct {
+	user
+	IsAdmin bool `json:"is_admin"`
+}
+
 //
 // native data structure conversion
 //
@@ -73,5 +104,20 @@ func convertOrg(from *org) *scm.Organization {
 	return &scm.Organization{
 		Name:   from.Name,
 		Avatar: from.Avatar,
+	}
+}
+
+func convertMemberList(from []*member) []*scm.TeamMember {
+	var to []*scm.TeamMember
+	for _, v := range from {
+		to = append(to, convertMember(v))
+	}
+	return to
+}
+
+func convertMember(from *member) *scm.TeamMember {
+	return &scm.TeamMember{
+		Login:   from.Login,
+		IsAdmin: from.IsAdmin,
 	}
 }
