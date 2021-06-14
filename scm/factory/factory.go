@@ -137,13 +137,17 @@ func NewClient(driver, serverURL, oauthToken string, opts ...ClientOptionFunc) (
 			for _, o := range opts {
 				o(client)
 			}
-			// Provide no username but clientID:clientSecret as token
-			if client.Username == "" && len(strings.SplitN(oauthToken, ":", 2)) == 2 {
-				credentials := strings.SplitN(oauthToken, ":", 2)
+
+			clientID := os.Getenv("BITBUCKET_CLOUD_OAUTH_CLIENT_ID")
+			clientSecret := os.Getenv("BITBUCKET_CLOUD_OAUTH_CLIENT_SECRET")
+			if clientID != "" {
+				if clientSecret == "" {
+					return nil, errors.Errorf("specified BITBUCKET_CLOUD_OAUTH_CLIENT_ID but missing BITBUCKET_CLOUD_OAUTH_CLIENT_SECRET")
+				}
 				config := clientcredentials.Config{
-					ClientID: credentials[0],
-					ClientSecret: credentials[1],
-					TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+					ClientID:     clientID,
+					ClientSecret: clientSecret,
+					TokenURL:     "https://bitbucket.org/site/oauth2/access_token",
 				}
 				client.Client = config.Client(context.Background())
 				return client, nil
