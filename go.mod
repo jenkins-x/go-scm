@@ -17,4 +17,17 @@ require (
 	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
 )
 
-go 1.13
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/golang/protobuf v1.2.0 // indirect
+	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
+	github.com/mitchellh/reflectwalk v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/net v0.0.0-20191021144547-ec77196f6094 // indirect
+	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
+	google.golang.org/appengine v1.4.0 // indirect
+	gopkg.in/yaml.v2 v2.2.2 // indirect
+)
+
+go 1.17
