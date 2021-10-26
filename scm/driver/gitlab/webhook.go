@@ -86,7 +86,7 @@ func parsePushHook(data []byte) (scm.Webhook, error) {
 		// returns more metadata (commit details).
 		return convertPushHook(src), nil
 	case src.ObjectKind == "push" && src.After == "0000000000000000000000000000000000000000":
-		return converBranchHook(src), nil
+		return convertBranchHook(src), nil
 	case src.ObjectKind == "tag_push" && src.Before == "0000000000000000000000000000000000000000":
 		// TODO we previously considered returning a
 		// tag creation hook, however, the push hook
@@ -188,7 +188,7 @@ func convertPushHook(src *pushHook) *scm.PushHook {
 	return dst
 }
 
-func converBranchHook(src *pushHook) *scm.BranchHook {
+func convertBranchHook(src *pushHook) *scm.BranchHook {
 	action := scm.ActionCreate
 	commit := src.After
 	if src.After == "0000000000000000000000000000000000000000" {
