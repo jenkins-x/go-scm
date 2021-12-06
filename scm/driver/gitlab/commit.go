@@ -23,6 +23,11 @@ func (s *commitService) UpdateCommitStatus(ctx context.Context,
 	return convertCommitStatus(out), res, err
 }
 
+func (s *commitService) CreateCommitComment(ctx context.Context,
+	repo string, sha string, body string) (*scm.Comment, *scm.Response, error) {
+	return nil, nil, fmt.Errorf("not support yet")
+}
+
 func convertCommitStatusUpdateOptions(from scm.CommitStatusUpdateOptions) commitStatusUpdateOptions {
 	return commitStatusUpdateOptions{
 		ID:          from.ID,

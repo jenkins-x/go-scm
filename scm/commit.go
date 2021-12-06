@@ -51,4 +51,7 @@ type (
 type CommitService interface {
 	UpdateCommitStatus(ctx context.Context,
 		repo string, sha string, options CommitStatusUpdateOptions) (*CommitStatus, *Response, error)
+
+	CreateCommitComment(ctx context.Context,
+		repo string, sha string, body string) (*Comment, *Response, error)
 }
