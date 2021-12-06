@@ -98,9 +98,10 @@ func TestReleaseCreate(t *testing.T) {
 
 	client := NewDefault()
 	input := &scm.ReleaseInput{
-		Title:       "v1.0",
-		Description: "Tracking release for version 1.0",
-		Tag:         "v1.0",
+		Title:                  "v1.0",
+		Description:            "Tracking release for version 1.0",
+		Tag:                    "v1.0",
+		DiscussionCategoryName: "general",
 	}
 
 	got, res, err := client.Releases.Create(context.Background(), "octocat/hello-world", input)

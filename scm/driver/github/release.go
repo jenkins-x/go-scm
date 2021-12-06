@@ -26,12 +26,14 @@ type release struct {
 }
 
 type releaseInput struct {
-	Title       string `json:"name"`
-	Description string `json:"body"`
-	Tag         string `json:"tag_name"`
-	Commitish   string `json:"target_commitish"`
-	Draft       bool   `json:"draft"`
-	Prerelease  bool   `json:"prerelease"`
+	Title                  string `json:"name"`
+	Description            string `json:"body"`
+	Tag                    string `json:"tag_name"`
+	Commitish              string `json:"target_commitish"`
+	Draft                  bool   `json:"draft"`
+	Prerelease             bool   `json:"prerelease"`
+	DiscussionCategoryName string `json:"discussion_category_name,omitempty"`
+	GenerateReleaseNotes   bool   `json:"generate_release_notes,omitempty"`
 }
 
 func (s *releaseService) Find(ctx context.Context, repo string, id int) (*scm.Release, *scm.Response, error) {
@@ -58,12 +60,14 @@ func (s *releaseService) List(ctx context.Context, repo string, opts scm.Release
 func (s *releaseService) Create(ctx context.Context, repo string, input *scm.ReleaseInput) (*scm.Release, *scm.Response, error) {
 	path := fmt.Sprintf("repos/%s/releases", repo)
 	in := &releaseInput{
-		Title:       input.Title,
-		Commitish:   input.Commitish,
-		Description: input.Description,
-		Draft:       input.Draft,
-		Prerelease:  input.Prerelease,
-		Tag:         input.Tag,
+		Title:                  input.Title,
+		Commitish:              input.Commitish,
+		Description:            input.Description,
+		Draft:                  input.Draft,
+		Prerelease:             input.Prerelease,
+		Tag:                    input.Tag,
+		DiscussionCategoryName: input.DiscussionCategoryName,
+		GenerateReleaseNotes:   input.GenerateReleaseNotes,
 	}
 	out := new(release)
 	res, err := s.client.do(ctx, "POST", path, in, out)

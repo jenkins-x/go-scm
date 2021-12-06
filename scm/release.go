@@ -22,12 +22,14 @@ type (
 
 	// ReleaseInput contains the information needed to create a release
 	ReleaseInput struct {
-		Title       string
-		Description string
-		Tag         string
-		Commitish   string
-		Draft       bool
-		Prerelease  bool
+		Title                  string
+		Description            string
+		Tag                    string
+		Commitish              string
+		Draft                  bool
+		Prerelease             bool
+		DiscussionCategoryName string
+		GenerateReleaseNotes   bool
 	}
 
 	// ReleaseListOptions provides options for querying a list of repository releases.
