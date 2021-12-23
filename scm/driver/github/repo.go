@@ -234,6 +234,14 @@ func (s *repositoryService) ListStatus(ctx context.Context, repo, ref string, op
 	return convertStatusList(out), res, err
 }
 
+// ListStatusByState returns a list of commit statuses with the specified state.
+func (s *repositoryService) ListStatusByState(ctx context.Context, repo, ref string, opts scm.ListOptions, state scm.State) ([]*scm.Status, *scm.Response, error) {
+	path := fmt.Sprintf("repos/%s/statuses/%s?%s", repo, ref, encodeListOptions(opts))
+	out := []*status{}
+	res, err := s.client.do(ctx, "GET", path, nil, &out)
+	return convertStatusListByState(out, state), res, err
+}
+
 // FindCombinedStatus returns the latest statuses for a given ref.
 //
 // See https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
@@ -452,6 +460,27 @@ func convertStatusList(from []*status) []*scm.Status {
 	unique := make(map[string]interface{})
 	for _, v := range from {
 		convertedStatus := convertStatus(v)
+		if _, ok := unique[convertedStatus.Label]; ok {
+			continue
+		}
+		to = append(to, convertedStatus)
+		unique[convertedStatus.Label] = nil
+	}
+	return to
+}
+
+func convertStatusListByState(from []*status, state scm.State) []*scm.Status {
+	// The GitHub API may return multiple statuses with the same Context, in
+	// reverse chronological order:
+	// https://developer.github.com/v3/repos/statuses/#list-statuses-for-a-specific-ref.
+	// We only expose the most recent one to consumers.
+	to := []*scm.Status{}
+	unique := make(map[string]interface{})
+	for _, v := range from {
+		convertedStatus := convertStatus(v)
+		if convertedStatus.State != state {
+			continue
+		}
 		if _, ok := unique[convertedStatus.Label]; ok {
 			continue
 		}

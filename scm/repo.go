@@ -7,6 +7,8 @@ package scm
 import (
 	"context"
 	"time"
+
+	"github.com/drone/go-scm/scm"
 )
 
 const (
@@ -146,6 +148,9 @@ type (
 
 		// ListStatus returns a list of commit statuses.
 		ListStatus(context.Context, string, string, ListOptions) ([]*Status, *Response, error)
+
+		// ListStatus returns a list of commit statuses with the specified state.
+		ListStatusByState(context.Context, string, string, ListOptions, scm.State) ([]*Status, *Response, error)
 
 		// FindCombinedStatus returns the combined status for a ref
 		FindCombinedStatus(ctx context.Context, repo, ref string) (*CombinedStatus, *Response, error)
