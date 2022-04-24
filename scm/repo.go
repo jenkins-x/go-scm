@@ -189,6 +189,25 @@ type (
 	}
 )
 
+// ListAggregateStatus returns an aggregate list of commit statusus across all pages.
+func ListAggregateStatus(s RepositoryService, ctx context.Context, repo, ref string, opts ListOptions) ([]*Status, error) {
+	allStatuses := []*Status{}
+	opts.Page = 1
+	for {
+		statuses, res, err := s.ListStatus(ctx, repo, ref, opts)
+		if err != nil {
+			return allStatuses, err
+		}
+		allStatuses = append(allStatuses, statuses...)
+		// Check for an invalid value for the next page
+		if res == nil || res.Page.Next <= opts.Page {
+			break
+		}
+		opts.Page = res.Page.Next
+	}
+	return allStatuses, nil
+}
+
 // TODO(bradrydzewski): Add endpoint to get a repository deploy key
 // TODO(bradrydzewski): Add endpoint to list repository deploy keys
 // TODO(bradrydzewski): Add endpoint to create a repository deploy key
