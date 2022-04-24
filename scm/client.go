@@ -193,6 +193,25 @@ func (c *Client) Do(ctx context.Context, in *Request) (*Response, error) {
 	return newResponse(res), err
 }
 
+// ListAggregateStatus returns an aggregate list of commit statusus across all pages.
+func (c *Client) ListAggregateStatus(ctx context.Context, repo, ref string, opts ListOptions) ([]*Status, error) {
+	allStatuses := []*Status{}
+	opts.Page = 1
+	for {
+		statuses, res, err := c.Repositories.ListStatus(ctx, repo, ref, opts)
+		if err != nil {
+			return allStatuses, err
+		}
+		allStatuses = append(allStatuses, statuses...)
+		// Check for an invalid value for the next page
+		if res == nil || res.Page.Next <= opts.Page {
+			break
+		}
+		opts.Page = res.Page.Next
+	}
+	return allStatuses, nil
+}
+
 // newResponse creates a new Response for the provided
 // http.Response. r must not be nil.
 func newResponse(r *http.Response) *Response {
