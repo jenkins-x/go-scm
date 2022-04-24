@@ -318,6 +318,27 @@ func ExampleHook_create() {
 	}
 }
 
+func ExampleStatus_listStatuses() {
+	client, err := github.New("https://api.github.com")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	opts := scm.ListOptions{
+		Page: 1,
+		Size: 30,
+	}
+
+	statuses, err := client.ListStatuses(ctx, "octocat/Hello-World", "6dcb09b5b57875f334f61aebed695e2e4193db5e", opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, status := range statuses {
+		log.Println(status.State, status.Target)
+	}
+}
+
 func ExampleStatus_list() {
 	client, err := github.New("https://api.github.com")
 	if err != nil {
