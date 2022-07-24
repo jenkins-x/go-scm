@@ -20,5 +20,5 @@ spec:
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/updatebot/release.yaml@versionStream
   podTemplate: {}
   serviceAccountName: tekton-bot
-  timeout: 240h0m0s
+  timeout: 1h
 status: {}
