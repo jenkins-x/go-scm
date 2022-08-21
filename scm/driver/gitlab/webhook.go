@@ -684,21 +684,19 @@ type (
 		} `json:"user"`
 		Project          project `json:"project"`
 		ObjectAttributes struct {
-			AssigneeID     interface{} `json:"assignee_id"`
-			AuthorID       int         `json:"author_id"`
-			CreatedAt      string      `json:"created_at"`
-			DeletedAt      interface{} `json:"deleted_at"`
-			Description    string      `json:"description"`
-			HeadPipelineID interface{} `json:"head_pipeline_id"`
-			ID             int         `json:"id"`
-			Iid            int         `json:"iid"`
-			LastEditedAt   interface{} `json:"last_edited_at"`
-			LastEditedByID interface{} `json:"last_edited_by_id"`
-			MergeCommitSha string      `json:"merge_commit_sha"`
-			MergeError     interface{} `json:"merge_error"`
-			MergeParams    struct {
-				ForceRemoveSourceBranch string `json:"force_remove_source_branch"`
-			} `json:"merge_params"`
+			AssigneeID                interface{} `json:"assignee_id"`
+			AuthorID                  int         `json:"author_id"`
+			CreatedAt                 string      `json:"created_at"`
+			DeletedAt                 interface{} `json:"deleted_at"`
+			Description               string      `json:"description"`
+			HeadPipelineID            interface{} `json:"head_pipeline_id"`
+			ID                        int         `json:"id"`
+			Iid                       int         `json:"iid"`
+			LastEditedAt              interface{} `json:"last_edited_at"`
+			LastEditedByID            interface{} `json:"last_edited_by_id"`
+			MergeCommitSha            string      `json:"merge_commit_sha"`
+			MergeError                interface{} `json:"merge_error"`
+			MergeParams               interface{} `json:"-"`
 			MergeStatus               string      `json:"merge_status"`
 			MergeUserID               interface{} `json:"merge_user_id"`
 			MergeWhenPipelineSucceeds bool        `json:"merge_when_pipeline_succeeds"`
