@@ -21,7 +21,15 @@ spec:
           resources: {}
         - name: jx-variables
           resources: {}
-        - name: build-make-linux
+        # - name: build-make-linux
+        #   resources: {}
+        - command:
+          - jx-updatebot
+          - pr
+          - --version
+          - 1.11.32
+          image: ankitm1234/jx-updatebot:test-2
+          name: promote-release
           resources: {}
   podTemplate: {}
   serviceAccountName: tekton-bot
