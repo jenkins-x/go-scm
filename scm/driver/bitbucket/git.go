@@ -132,6 +132,10 @@ func (s *gitService) CompareCommits(ctx context.Context, repo, ref1, ref2 string
 	return convertDiffstats(out), res, err
 }
 
+func (s *gitService) GetDefaultBranch(ctx context.Context, repo string) (*scm.Reference, *scm.Response, error) {
+	return nil, nil, scm.ErrNotSupported
+}
+
 type branch struct {
 	Type   string `json:"type"`
 	Name   string `json:"name"`

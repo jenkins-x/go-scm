@@ -69,6 +69,10 @@ func (s *gitService) CompareCommits(ctx context.Context, repo, ref1, ref2 string
 	return nil, nil, scm.ErrNotSupported
 }
 
+func (s *gitService) GetDefaultBranch(ctx context.Context, repo string) (*scm.Reference, *scm.Response, error) {
+	return nil, nil, scm.ErrNotSupported
+}
+
 //
 // native data structures
 //
