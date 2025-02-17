@@ -95,7 +95,7 @@ func IsScmNotFound(err error) bool {
 	if err != nil {
 		// I think that we should instead rely on the http status (404)
 		// until jenkins-x go-scm is updated t return that in the error this works for github and gitlab
-		return strings.Contains(err.Error(), ErrNotFound.Error())
+		return strings.Contains(err.Error(), "Not Found")
 	}
 	return false
 }
