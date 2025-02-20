@@ -428,6 +428,7 @@ func convertPullRequest(from *pullRequest) *scm.PullRequest {
 		Created:   time.Unix(from.CreatedDate/1000, 0),
 		Updated:   time.Unix(from.UpdatedDate/1000, 0),
 		Author: scm.User{
+			ID:     from.Author.User.ID,
 			Login:  from.Author.User.Slug,
 			Name:   from.Author.User.DisplayName,
 			Email:  from.Author.User.EmailAddress,
@@ -501,6 +502,7 @@ func convertPullRequestComment(from *pullRequestComment) *scm.Comment {
 		Created: time.Unix(from.CreatedDate/1000, 0),
 		Updated: time.Unix(from.UpdatedDate/1000, 0),
 		Author: scm.User{
+			ID:     from.Author.ID,
 			Login:  from.Author.Slug,
 			Name:   from.Author.DisplayName,
 			Email:  from.Author.EmailAddress,

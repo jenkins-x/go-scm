@@ -42,6 +42,7 @@
   "Closed": false,
   "Merged": false,
   "Author": {
+    "ID": 1,
     "Login": "jcitizen",
     "Name": "Jane Citizen",
     "Email": "jane@example.com",
@@ -49,6 +50,7 @@
   },
   "Reviewers": [
     {
+      "ID": 115026,
       "Login": "tom",
       "Name": "Tom",
       "Email": "tom@example.com",

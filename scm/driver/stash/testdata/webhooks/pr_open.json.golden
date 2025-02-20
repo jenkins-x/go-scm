@@ -64,6 +64,7 @@
       }
     },
     "Author": {
+      "ID": 1,
       "Login": "jcitizen",
       "Name": "Jane Citizen",
       "Email": "jane@example.com",
@@ -73,6 +74,7 @@
     "Updated": "2018-07-05T12:21:30-07:00"
   },
   "Sender": {
+    "ID": 1,
     "Login": "jcitizen",
     "Name": "Jane Citizen",
     "Email": "jane@example.com",
