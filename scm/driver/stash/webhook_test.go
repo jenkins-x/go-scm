@@ -123,6 +123,14 @@ func TestWebhooks(t *testing.T) {
 			after:  "testdata/webhooks/pr_declined.json.golden",
 			obj:    new(scm.PullRequestHook),
 		},
+		// pull request deleted
+		{
+			sig:    "71295b197fa25f4356d2fb9965df3f2379d903d7",
+			event:  "pr:deleted",
+			before: "testdata/webhooks/pr_deleted.json",
+			after:  "testdata/webhooks/pr_deleted.json.golden",
+			obj:    new(scm.PullRequestHook),
+		},
 		// pull request comment
 		{
 			sig:    "71295b197fa25f4356d2fb9965df3f2379d903d7",
