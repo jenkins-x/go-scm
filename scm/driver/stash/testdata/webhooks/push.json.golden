@@ -19,6 +19,7 @@
         "Sha": "823b2230a56056231c9425d63758fa87078a66b4",
         "Message": "",
         "Author": {
+            "ID": 1,
             "Name": "Jane Citizen",
             "Email": "jane@example.com",
             "Date": "2018-07-05T18:22:00Z",
@@ -26,6 +27,7 @@
             "Avatar": "https://www.gravatar.com/avatar/9e26471d35a78862c17e467d87cddedf.jpg"
         },
         "Committer": {
+            "ID": 1,
             "Name": "Jane Citizen",
             "Email": "jane@example.com",
             "Date": "2018-07-05T18:22:00Z",
@@ -35,6 +37,7 @@
         "Link": ""
     },
     "Sender": {
+        "ID": 1,
         "Login": "jcitizen",
         "Name": "Jane Citizen",
         "Email": "jane@example.com",
