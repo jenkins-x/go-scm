@@ -64,6 +64,7 @@
       }
     },
     "Author": {
+      "ID": 1,
       "Login": "admin",
       "Name": "Administrator",
       "Email": "admin@example.com",
@@ -71,6 +72,7 @@
     },
     "Reviewers": [
       {
+        "ID": 2,
         "Login": "user",
         "Name": "User",
         "Email": "user@example.com",
@@ -83,6 +85,7 @@
   "Review": {
     "State": "CHANGES_REQUESTED",
     "Author": {
+      "ID": 2,
       "Login": "user",
       "Name": "User",
       "Email": "user@example.com",

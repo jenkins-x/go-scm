@@ -43,6 +43,7 @@
     "Merged": false,
     "State": "open",
     "Author": {
+      "ID": 1,
       "Login": "jcitizen",
       "Name": "Jane Citizen",
       "Email": "jane@example.com",
