@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -164,24 +163,35 @@ func (c *wrapper) doRequest(ctx context.Context, req *scm.Request, in, out inter
 	// if an error is encountered, unmarshal and return the
 	// error response.
 	if res.Status > 300 {
-		if res.Status == 404 {
-			return res, scm.ErrNotFound
-		}
-		if logrus.IsLevelEnabled(logrus.DebugLevel) && res.Body != nil {
-			if b, err := io.ReadAll(res.Body); err == nil {
-				logrus.WithFields(logrus.Fields{
-					"requestMethod":  req.Method,
-					"requestPath":    req.Path,
-					"responseStatus": res.Status,
-					"responseBody":   string(b),
-					"rate":           res.Rate,
-					"requestID":      res.ID,
-				}).Debug("GitHub responded with error")
+		githubError := new(Error)
+		if res.Body != nil {
+			rawBody, err := io.ReadAll(res.Body)
+			if err == nil {
+				err = json.Unmarshal(rawBody, githubError)
+				if err != nil {
+					githubError.Message = string(rawBody)
+				}
 			}
 		}
-		return res, errors.New(
-			http.StatusText(res.Status),
-		)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.WithFields(logrus.Fields{
+				"requestMethod":  req.Method,
+				"requestPath":    req.Path,
+				"responseStatus": res.Status,
+				"responseError":  githubError,
+				"rate":           res.Rate,
+				"requestID":      res.ID,
+			}).Debug("GitHub responded with error")
+		}
+
+		return res, fmt.Errorf("HTTP error %s: %+v", http.StatusText(res.Status), HTTPError{
+			StatusCode:    res.Status,
+			ResponseError: githubError,
+			RequestMethod: req.Method,
+			RequestPath:   req.Path,
+			Rate:          res.Rate,
+			RequestID:     res.ID,
+		})
 	}
 
 	if out == nil {
@@ -200,4 +210,13 @@ type Error struct {
 
 func (e *Error) Error() string {
 	return e.Message
+}
+
+type HTTPError struct {
+	StatusCode    int
+	ResponseError any
+	RequestMethod string
+	RequestPath   string
+	Rate          scm.Rate
+	RequestID     string
 }
