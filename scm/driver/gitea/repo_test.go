@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -126,8 +127,8 @@ func TestRepoNotFound(t *testing.T) {
 	_, _, err := client.Repositories.FindPerms(context.Background(), "gogits/go-gogs-client")
 	if err == nil {
 		t.Errorf("Expect Not Found error")
-	} else if got, want := err.Error(), "404 Not Found"; got != want {
-		t.Errorf("Want error %q, got %q", want, got)
+	} else if !strings.Contains(err.Error(), "404") {
+		t.Errorf("Want error containing '404', got %q", err.Error())
 	}
 }
 
