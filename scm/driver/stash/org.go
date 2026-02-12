@@ -82,19 +82,26 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 	if err != nil {
 		return false, res, err
 	}
+	if isUserInGroups(ctx, user, groups, s.client, opts) {
+		return true, res, nil
+	}
+	return false, res, nil
+}
+
+func isUserInGroups(ctx context.Context, requestedUser string, groups []*projGroup, client *wrapper, opts *scm.ListOptions) bool {
 	for _, pgroup := range groups {
-		// Get list of users in a group
-		users, err := usersInGroups(ctx, pgroup.Group.Name, s.client, opts)
+		users, err := usersInGroups(ctx, pgroup.Group.Name, client, opts)
 		if err != nil {
 			continue
 		}
 		for _, member := range users {
-			if isRequestedUser(user, member.Name, member.Slug) {
-				return true, res, nil
+			if isRequestedUser(requestedUser, member.Name, member.Slug) {
+				return true
 			}
 		}
 	}
-	return false, res, nil
+
+	return false
 }
 
 func isRequestedUser(requested, name, slug string) bool {

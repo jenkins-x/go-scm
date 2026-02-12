@@ -276,16 +276,8 @@ func (s *repositoryService) IsCollaborator(ctx context.Context, repo, user strin
 	if err != nil {
 		return false, resp, err
 	}
-	for _, pgroup := range groups {
-		members, err := usersInGroups(ctx, pgroup.Group.Name, s.client, opts)
-		if err != nil {
-			continue
-		}
-		for _, member := range members {
-			if isRequestedUser(user, member.Name, member.Slug) {
-				return true, resp, nil
-			}
-		}
+	if isUserInGroups(ctx, user, groups, s.client, opts) {
+		return true, resp, nil
 	}
 
 	return false, resp, nil
