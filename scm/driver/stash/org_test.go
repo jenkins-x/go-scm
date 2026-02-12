@@ -7,7 +7,9 @@ package stash
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -181,6 +183,47 @@ func TestOrganizationIsAdmin(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(got, false); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+}
+
+func TestIsMemberGroupWithSpaces(t *testing.T) {
+	defer gock.Off()
+
+	// Given a group named "my group" that requires URL encoding
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/users").
+		Reply(200).
+		Type("application/json").
+		File("testdata/org_members.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/groups").
+		Reply(200).
+		Type("application/json").
+		File("testdata/project_groups_with_spaces.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		AddMatcher(func(req *http.Request, _ *gock.Request) (bool, error) {
+			return strings.Contains(req.URL.RawQuery, "context=my+group"), nil
+		}).
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members.json")
+
+	client, _ := New("http://example.com:7990")
+
+	// When IsMember is called for a user in that group
+	got, _, err := client.Organizations.IsMember(context.Background(), "some-project", "jx-user")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// Then the member is found
+	if diff := cmp.Diff(got, true); diff != "" {
 		t.Errorf("Unexpected Results")
 		t.Log(diff)
 	}

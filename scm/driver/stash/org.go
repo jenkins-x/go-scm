@@ -7,6 +7,7 @@ package stash
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/jenkins-x/go-scm/scm"
 )
@@ -113,7 +114,7 @@ func getProjectGroups(ctx context.Context, org string, os *organizationService, 
 
 // usersInGroups returns the members/users in a group
 func usersInGroups(ctx context.Context, group string, os *organizationService, opts *scm.ListOptions) ([]*member, error) {
-	path := fmt.Sprintf("rest/api/1.0/admin/groups/more-members?context=%s&%s", group, encodeListOptions(opts))
+	path := fmt.Sprintf("rest/api/1.0/admin/groups/more-members?context=%s&%s", url.QueryEscape(group), encodeListOptions(opts))
 	out := new(members)
 	res, err := os.client.do(ctx, "GET", path, nil, out)
 	if err != nil {
