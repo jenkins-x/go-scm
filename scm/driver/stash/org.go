@@ -73,7 +73,7 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 		res.Page.Next = opts.Page + 1
 	}
 	for _, participant := range out.Values {
-		if participant.User.Name == user || participant.User.Slug == user {
+		if isRequestedUser(user, participant.User.Name, participant.User.Slug) {
 			return true, res, nil
 		}
 	}
@@ -89,12 +89,16 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 			continue
 		}
 		for _, member := range users {
-			if member.Name == user || member.Slug == user {
+			if isRequestedUser(user, member.Name, member.Slug) {
 				return true, res, nil
 			}
 		}
 	}
 	return false, res, nil
+}
+
+func isRequestedUser(requested, name, slug string) bool {
+	return name == requested || slug == requested
 }
 
 // getProjectGroups returns the groups which have some permissions in the project
