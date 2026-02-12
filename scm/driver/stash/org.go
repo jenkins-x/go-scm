@@ -46,7 +46,7 @@ func (s *organizationService) ListTeamMembers(ctx context.Context, id int, role 
 
 func (s *organizationService) ListOrgMembers(ctx context.Context, org string, opts *scm.ListOptions) ([]*scm.TeamMember, *scm.Response, error) {
 	opts.Size = 1000
-	path := fmt.Sprintf("rest/api/1.0/projects/%s/permissions/users?%s", org, encodeListOptions(opts))
+	path := projectUsersPermissionsPath(org, opts)
 	out := new(participants)
 	res, err := s.client.do(ctx, "GET", path, nil, out)
 	if !out.pagination.LastPage.Bool {
@@ -62,7 +62,7 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 		Size: 1000,
 	}
 	// Check if user has permissions in the project
-	path := fmt.Sprintf("rest/api/1.0/projects/%s/permissions/users?%s", org, encodeListOptions(opts))
+	path := projectUsersPermissionsPath(org, opts)
 	out := new(participants)
 	res, err := s.client.do(ctx, "GET", path, nil, out)
 	if err != nil {
@@ -131,7 +131,7 @@ func (s *organizationService) IsAdmin(ctx context.Context, org, user string) (bo
 	opts := &scm.ListOptions{
 		Size: 1000,
 	}
-	path := fmt.Sprintf("rest/api/1.0/projects/%s/permissions/users?%s", org, encodeListOptions(opts))
+	path := projectUsersPermissionsPath(org, opts)
 	out := new(participants)
 	res, err := s.client.do(ctx, "GET", path, nil, out)
 	if !out.pagination.LastPage.Bool {
@@ -170,7 +170,7 @@ func (s *organizationService) ListMemberships(ctx context.Context, opts *scm.Lis
 }
 
 func convertParticipantsToTeamMembers(from *participants) []*scm.TeamMember {
-	var teamMembers []*scm.TeamMember
+	teamMembers := make([]*scm.TeamMember, 0, len(from.Values))
 	for _, f := range from.Values {
 		teamMembers = append(teamMembers, &scm.TeamMember{Login: f.User.Name})
 	}
@@ -178,11 +178,15 @@ func convertParticipantsToTeamMembers(from *participants) []*scm.TeamMember {
 }
 
 func convertProjectList(from []project) []*scm.Organization {
-	var to []*scm.Organization
+	to := make([]*scm.Organization, 0, len(from))
 	for _, v := range from {
 		to = append(to, convertProject(v))
 	}
 	return to
+}
+
+func projectUsersPermissionsPath(org string, opts *scm.ListOptions) string {
+	return fmt.Sprintf("rest/api/1.0/projects/%s/permissions/users?%s", org, encodeListOptions(opts))
 }
 
 func convertProject(from project) *scm.Organization {
