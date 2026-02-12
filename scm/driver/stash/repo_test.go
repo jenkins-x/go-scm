@@ -685,3 +685,99 @@ func TestRepositoryService_AddCollaborator(t *testing.T) {
 		t.Errorf("Expected collaborator to not already exist")
 	}
 }
+
+func TestIsCollaboratorViaGroup(t *testing.T) {
+	defer gock.Off()
+
+	// Given a repo where "jane" has no direct permissions but is in group "dev-team"
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/PRJ/repos/my-repo/permissions/users").
+		Reply(200).
+		Type("application/json").
+		File("testdata/repo_collaborators_empty.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/PRJ/repos/my-repo/permissions/groups").
+		Reply(200).
+		Type("application/json").
+		File("testdata/repo_groups.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "ops-team").
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members_ops.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "dev-team").
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members_jane.json")
+
+	client, _ := New("http://example.com:7990")
+
+	// When IsCollaborator is called for "jane"
+	got, _, err := client.Repositories.IsCollaborator(context.Background(), "PRJ/my-repo", "jane")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// Then she is recognized as a collaborator
+	if diff := cmp.Diff(true, got); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+}
+
+func TestIsCollaboratorNotInGroup(t *testing.T) {
+	defer gock.Off()
+
+	// Given a repo where "bob" has no direct permissions and is not in any repo group
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/PRJ/repos/my-repo/permissions/users").
+		Reply(200).
+		Type("application/json").
+		File("testdata/repo_collaborators_empty.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/PRJ/repos/my-repo/permissions/groups").
+		Reply(200).
+		Type("application/json").
+		File("testdata/repo_groups.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "ops-team").
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members_ops.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "dev-team").
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members_jane.json")
+
+	client, _ := New("http://example.com:7990")
+
+	// When IsCollaborator is called for "bob"
+	got, _, err := client.Repositories.IsCollaborator(context.Background(), "PRJ/my-repo", "bob")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// Then he is not recognized as a collaborator
+	if diff := cmp.Diff(false, got); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+
+	if !gock.IsDone() {
+		t.Errorf("expected all gock mocks to be consumed")
+	}
+}

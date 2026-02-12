@@ -266,10 +266,43 @@ func (s *repositoryService) IsCollaborator(ctx context.Context, repo, user strin
 	}
 	for k := range users {
 		if users[k].Name == user || users[k].Login == user {
-			return true, resp, err
+			return true, resp, nil
 		}
 	}
-	return false, resp, err
+
+	namespace, name := scm.Split(repo)
+	opts := &scm.ListOptions{Size: 1000}
+	groups, err := getRepoGroups(ctx, namespace, name, s.client, opts)
+	if err != nil {
+		return false, resp, err
+	}
+	for _, pgroup := range groups {
+		members, err := usersInGroups(ctx, pgroup.Group.Name, s.client, opts)
+		if err != nil {
+			continue
+		}
+		for _, member := range members {
+			if member.Name == user || member.Slug == user {
+				return true, resp, nil
+			}
+		}
+	}
+
+	return false, resp, nil
+}
+
+func getRepoGroups(ctx context.Context, namespace, name string, client *wrapper, opts *scm.ListOptions) ([]*projGroup, error) {
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/permissions/groups?%s", namespace, name, encodeListOptions(opts))
+	out := new(projGroups)
+	res, err := client.do(ctx, "GET", path, nil, out)
+	if err != nil {
+		return nil, err
+	}
+	if !out.pagination.LastPage.Bool {
+		res.Page.First = 1
+		res.Page.Next = opts.Page + 1
+	}
+	return out.Values, nil
 }
 
 func (s *repositoryService) ListCollaborators(ctx context.Context, repo string, opts *scm.ListOptions) ([]scm.User, *scm.Response, error) {

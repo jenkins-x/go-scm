@@ -84,7 +84,7 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 	}
 	for _, pgroup := range groups {
 		// Get list of users in a group
-		users, err := usersInGroups(ctx, pgroup.Group.Name, s, opts)
+		users, err := usersInGroups(ctx, pgroup.Group.Name, s.client, opts)
 		if err != nil {
 			continue
 		}
@@ -117,10 +117,10 @@ func getProjectGroups(ctx context.Context, org string, os *organizationService, 
 }
 
 // usersInGroups returns the members/users in a group
-func usersInGroups(ctx context.Context, group string, os *organizationService, opts *scm.ListOptions) ([]*member, error) {
+func usersInGroups(ctx context.Context, group string, client *wrapper, opts *scm.ListOptions) ([]*member, error) {
 	path := fmt.Sprintf("rest/api/1.0/admin/groups/more-members?context=%s&%s", url.QueryEscape(group), encodeListOptions(opts))
 	out := new(members)
-	res, err := os.client.do(ctx, "GET", path, nil, out)
+	res, err := client.do(ctx, "GET", path, nil, out)
 	if err != nil {
 		return nil, err
 	}

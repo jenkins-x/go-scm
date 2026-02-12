@@ -1,0 +1,17 @@
+{
+  "size": 1,
+  "limit": 25,
+  "isLastPage": true,
+  "values": [
+    {
+      "name": "ops-admin",
+      "emailAddress": "ops@example.com",
+      "id": 301,
+      "displayName": "Ops Admin",
+      "active": true,
+      "slug": "ops-admin",
+      "type": "NORMAL"
+    }
+  ],
+  "start": 0
+}
