@@ -78,7 +78,7 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 		}
 	}
 	// Retrieve the list of groups attached to the project
-	groups, err := getProjectGroups(ctx, org, s, opts)
+	groups, err := getProjectGroups(ctx, org, s.client, opts)
 	if err != nil {
 		return false, res, err
 	}
@@ -102,10 +102,10 @@ func isRequestedUser(requested, name, slug string) bool {
 }
 
 // getProjectGroups returns the groups which have some permissions in the project
-func getProjectGroups(ctx context.Context, org string, os *organizationService, opts *scm.ListOptions) ([]*projGroup, error) {
+func getProjectGroups(ctx context.Context, org string, client *wrapper, opts *scm.ListOptions) ([]*projGroup, error) {
 	path := fmt.Sprintf("rest/api/1.0/projects/%s/permissions/groups?%s", org, encodeListOptions(opts))
 	out := new(projGroups)
-	res, err := os.client.do(ctx, "GET", path, nil, out)
+	res, err := client.do(ctx, "GET", path, nil, out)
 	if err != nil {
 		return nil, err
 	}
