@@ -74,7 +74,7 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 	}
 	for _, participant := range out.Values {
 		if participant.User.Name == user || participant.User.Slug == user {
-			return true, res, err
+			return true, res, nil
 		}
 	}
 	// Retrieve the list of groups attached to the project
@@ -86,15 +86,15 @@ func (s *organizationService) IsMember(ctx context.Context, org, user string) (b
 		// Get list of users in a group
 		users, err := usersInGroups(ctx, pgroup.Group.Name, s, opts)
 		if err != nil {
-			return false, res, err
+			continue
 		}
 		for _, member := range users {
 			if member.Name == user || member.Slug == user {
-				return true, res, err
+				return true, res, nil
 			}
 		}
 	}
-	return false, res, err
+	return false, res, nil
 }
 
 // getProjectGroups returns the groups which have some permissions in the project

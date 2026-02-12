@@ -153,6 +153,89 @@ func TestOrganizationIsMember(t *testing.T) {
 	}
 }
 
+func TestIsMemberContinuesOnGroupError(t *testing.T) {
+	defer gock.Off()
+
+	// Given a project with two groups where the first group lookup fails
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/users").
+		Reply(200).
+		Type("application/json").
+		File("testdata/org_members.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/groups").
+		Reply(200).
+		Type("application/json").
+		File("testdata/project_groups_two_groups.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "failing-group").
+		Reply(500)
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "good-group").
+		Reply(200).
+		Type("application/json").
+		File("testdata/group_members.json")
+
+	client, _ := New("http://example.com:7990")
+
+	// When IsMember is called for a user in the second group
+	got, _, err := client.Organizations.IsMember(context.Background(), "some-project", "jx-user")
+
+	// Then the member is found without error
+	if diff := cmp.Diff(true, got); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+
+	if diff := cmp.Diff(nil, err); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+}
+
+func TestIsMemberReturnsFalseWhenAllGroupsFail(t *testing.T) {
+	defer gock.Off()
+
+	// Given a project with one group whose lookup fails
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/users").
+		Reply(200).
+		Type("application/json").
+		File("testdata/org_members.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/projects/some-project/permissions/groups").
+		Reply(200).
+		Type("application/json").
+		File("testdata/project_groups_one_failing.json")
+
+	gock.New("http://example.com:7990").
+		Get("/rest/api/1.0/admin/groups/more-members").
+		MatchParam("context", "failing-group").
+		Reply(500)
+
+	client, _ := New("http://example.com:7990")
+
+	// When IsMember is called for a user not in direct permissions
+	got, _, err := client.Organizations.IsMember(context.Background(), "some-project", "unknown-user")
+
+	// Then IsMember returns false without error
+	if diff := cmp.Diff(false, got); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+
+	if diff := cmp.Diff(nil, err); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+}
+
 func TestOrganizationIsAdmin(t *testing.T) {
 	defer gock.Off()
 
