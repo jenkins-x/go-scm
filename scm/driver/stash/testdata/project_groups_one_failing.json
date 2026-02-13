@@ -1,0 +1,14 @@
+{
+  "size": 1,
+  "limit": 25,
+  "isLastPage": true,
+  "values": [
+    {
+      "group": {
+        "name": "failing-group"
+      },
+      "permission": "PROJECT_WRITE"
+    }
+  ],
+  "start": 0
+}

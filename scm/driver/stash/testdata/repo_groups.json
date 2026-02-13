@@ -1,0 +1,20 @@
+{
+  "size": 2,
+  "limit": 25,
+  "isLastPage": true,
+  "values": [
+    {
+      "group": {
+        "name": "ops-team"
+      },
+      "permission": "REPO_READ"
+    },
+    {
+      "group": {
+        "name": "dev-team"
+      },
+      "permission": "REPO_WRITE"
+    }
+  ],
+  "start": 0
+}
