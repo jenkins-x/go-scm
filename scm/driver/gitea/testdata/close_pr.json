@@ -1,11 +1,13 @@
 {
   "title":"",
-  "body":"",
-  "base": "",
+  "body":null,
+  "base":"",
   "assignee":"",
-  "assignees": null,
-  "labels": null,
+  "assignees":null,
   "milestone":0,
+  "labels":null,
   "state":"closed",
-  "due_date": null
+  "due_date":null,
+  "unset_due_date":null,
+  "allow_maintainer_edit":null
 }
