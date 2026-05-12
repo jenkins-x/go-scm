@@ -137,7 +137,7 @@ func TestOrganizationIsMember(t *testing.T) {
 	}
 
 	for k, v := range testCases {
-		t.Logf("Running test %q: %s", k, v.description)
+		t.Logf("Running test %d: %s", k, v.description)
 		client, _ := New("http://example.com:7990")
 
 		got, _, err := client.Organizations.IsMember(context.Background(), "some-project", v.user)
