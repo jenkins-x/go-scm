@@ -49,16 +49,16 @@ func TestFromRepoURL(t *testing.T) {
 	if client.Driver != scm.DriverGitlab {
 		t.Fatalf("Driver got %q, want %q", client.Driver, client.Driver)
 	}
-	assert.Equal(t, "abc123", sentHeader(t, client, "Private-Token"))
+	assert.Equal(t, "abc123", sentRequest(t, client).Header.Get("Private-Token"))
 }
 
-// sentHeader issues a request through the client's transport and returns the
-// value the transport attached, which is the credential the factory installed.
-func sentHeader(t *testing.T, client *scm.Client, header string) string {
+// sentRequest issues a request through the client's transport and returns it as
+// the server saw it, carrying whatever credential the factory installed.
+func sentRequest(t *testing.T, client *scm.Client) *http.Request {
 	t.Helper()
-	var got string
+	var got *http.Request
 	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-		got = r.Header.Get(header)
+		got = r
 	}))
 	defer srv.Close()
 
@@ -78,15 +78,25 @@ func TestNewClientWithTokenSource(t *testing.T) {
 		{driver: "gogs", header: "Authorization", want: "Bearer token-1"},
 		{driver: "stash", header: "Authorization", want: "Bearer token-1"},
 		{driver: "gitlab", header: "Private-Token", want: "token-1"},
-		{driver: "azure", header: "Authorization", want: "Basic OnRva2VuLTE="},
 	}
 	for _, tc := range tests {
 		t.Run(tc.driver, func(t *testing.T) {
 			client, err := NewClientWithTokenSource(tc.driver, "https://example.com", &mintingSource{})
 			require.NoError(t, err)
-			assert.Equal(t, tc.want, sentHeader(t, client, tc.header))
+			assert.Equal(t, tc.want, sentRequest(t, client).Header.Get(tc.header))
 		})
 	}
+}
+
+func TestNewClientWithTokenSource_Azure(t *testing.T) {
+	client, err := NewClientWithTokenSource("azure", "https://example.com", &mintingSource{})
+	require.NoError(t, err)
+
+	// Azure DevOps takes the token as the password with no username.
+	username, password, ok := sentRequest(t, client).BasicAuth()
+	require.True(t, ok)
+	assert.Empty(t, username)
+	assert.Equal(t, "token-1", password)
 }
 
 // TestNewClientWithTokenSource_Gitea covers the Gitea SDK's own http.Client as
@@ -117,15 +127,19 @@ func TestNewClientWithTokenSource_Gitea(t *testing.T) {
 func TestNewClientWithTokenSource_BitbucketCloud(t *testing.T) {
 	client, err := NewClientWithTokenSource("bitbucketcloud", "", &mintingSource{}, SetUsername("bot"))
 	require.NoError(t, err)
-	assert.Equal(t, "Basic Ym90OnRva2VuLTE=", sentHeader(t, client, "Authorization"))
+
+	username, password, ok := sentRequest(t, client).BasicAuth()
+	require.True(t, ok)
+	assert.Equal(t, "bot", username)
+	assert.Equal(t, "token-1", password)
 }
 
 func TestNewClientWithTokenSource_RefreshesToken(t *testing.T) {
 	client, err := NewClientWithTokenSource("github", "", &mintingSource{})
 	require.NoError(t, err)
 
-	assert.Equal(t, "Bearer token-1", sentHeader(t, client, "Authorization"))
-	assert.Equal(t, "Bearer token-2", sentHeader(t, client, "Authorization"))
+	assert.Equal(t, "Bearer token-1", sentRequest(t, client).Header.Get("Authorization"))
+	assert.Equal(t, "Bearer token-2", sentRequest(t, client).Header.Get("Authorization"))
 }
 
 // mintingSource issues a different token on each call, standing in for a source

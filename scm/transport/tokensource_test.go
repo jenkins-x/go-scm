@@ -75,33 +75,42 @@ func TestAuth_Credentials(t *testing.T) {
 	tests := []struct {
 		name       string
 		credential Credential
-		header     string
-		want       string
+		check      func(t *testing.T, r *http.Request)
 	}{
 		{
 			name:       "scheme",
 			credential: SchemeCredential("token"),
-			header:     "Authorization",
-			want:       "token token-1",
+			check: func(t *testing.T, r *http.Request) {
+				assert.Equal(t, "token token-1", r.Header.Get("Authorization"))
+			},
 		},
 		{
 			name:       "private token",
 			credential: PrivateTokenCredential,
-			header:     "Private-Token",
-			want:       "token-1",
+			check: func(t *testing.T, r *http.Request) {
+				assert.Equal(t, "token-1", r.Header.Get("Private-Token"))
+			},
 		},
 		{
 			name:       "basic auth with a username",
 			credential: BasicAuthCredential("bot"),
-			header:     "Authorization",
-			want:       "Basic Ym90OnRva2VuLTE=",
+			check: func(t *testing.T, r *http.Request) {
+				username, password, ok := r.BasicAuth()
+				require.True(t, ok)
+				assert.Equal(t, "bot", username)
+				assert.Equal(t, "token-1", password)
+			},
 		},
 		{
 			// Azure DevOps sends the token as the password with no username.
 			name:       "basic auth without a username",
 			credential: BasicAuthCredential(""),
-			header:     "Authorization",
-			want:       "Basic OnRva2VuLTE=",
+			check: func(t *testing.T, r *http.Request) {
+				username, password, ok := r.BasicAuth()
+				require.True(t, ok)
+				assert.Empty(t, username)
+				assert.Equal(t, "token-1", password)
+			},
 		},
 	}
 	for _, tc := range tests {
@@ -115,7 +124,7 @@ func TestAuth_Credentials(t *testing.T) {
 			get(t, client, srv.URL)
 
 			require.Len(t, requests, 1)
-			assert.Equal(t, tc.want, requests[0].Header.Get(tc.header))
+			tc.check(t, requests[0])
 		})
 	}
 }
