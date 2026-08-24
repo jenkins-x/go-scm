@@ -12,7 +12,7 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20190718010115-4ba037080260
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f
 	github.com/sirupsen/logrus v1.9.4
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.1
 	golang.org/x/oauth2 v0.36.0
 	gopkg.in/h2non/gock.v1 v1.1.2
 	k8s.io/apimachinery v0.36.3
@@ -37,16 +37,15 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
