@@ -4,7 +4,7 @@ require (
 	code.gitea.io/sdk/gitea v0.22.1
 	fortio.org/safecast v1.2.0
 	github.com/bluekeyes/go-gitdiff v0.9.0
-	github.com/go-git/go-billy/v5 v5.9.0
+	github.com/go-git/go-billy/v5 v5.9.1
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/mitchellh/copystructure v1.2.0
