@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jenkins-x/go-scm/scm"
@@ -13,7 +14,7 @@ type Credential func(r *http.Request, token string)
 // Auth is an http.RoundTripper that resolves its credential from a
 // scm.TokenSource on every request rather than capturing it, so a token that
 // expires part way through the life of a client is replaced without the client
-// having to be rebuilt.
+// having to be rebuilt. Both Source and Credential are required.
 type Auth struct {
 	Base http.RoundTripper
 
@@ -23,6 +24,9 @@ type Auth struct {
 
 // RoundTrip resolves a token and attaches it to the request.
 func (t *Auth) RoundTrip(r *http.Request) (*http.Response, error) {
+	if t.Source == nil || t.Credential == nil {
+		return nil, errors.New("transport: Auth requires both a Source and a Credential")
+	}
 	token, err := t.Source.Token(r.Context())
 	if err != nil {
 		return nil, err

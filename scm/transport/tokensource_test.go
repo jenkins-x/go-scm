@@ -141,6 +141,23 @@ func TestAuth_SourceError(t *testing.T) {
 	assert.Contains(t, err.Error(), "cannot mint a token")
 }
 
+func TestAuth_Misconfigured(t *testing.T) {
+	tests := map[string]*Auth{
+		"no source":     {Credential: SchemeCredential("Bearer")},
+		"no credential": {Source: &mintingSource{}},
+		"neither":       {},
+	}
+	for name, tr := range tests {
+		t.Run(name, func(t *testing.T) {
+			//nolint:bodyclose // the transport fails before a response exists
+			res, err := (&http.Client{Transport: tr}).Get("http://localhost")
+			require.Nil(t, res)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "requires both a Source and a Credential")
+		})
+	}
+}
+
 func TestAuth_NoTokenSendsRequestUnauthenticated(t *testing.T) {
 	var requests []*http.Request
 	srv := recorder(t, &requests)
