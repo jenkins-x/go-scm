@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/go-scm/scm/driver/gitlab"
 	"github.com/jenkins-x/go-scm/scm/transport"
 )
@@ -21,8 +22,9 @@ func TestGitLab(t *testing.T) {
 
 	client, _ := gitlab.New("https://gitlab.com/")
 	client.Client = &http.Client{
-		Transport: &transport.PrivateToken{
-			Token: os.Getenv("GITLAB_TOKEN"),
+		Transport: &transport.Auth{
+			Source:     scm.StaticTokenSource(os.Getenv("GITLAB_TOKEN")),
+			Credential: transport.PrivateTokenCredential,
 		},
 	}
 

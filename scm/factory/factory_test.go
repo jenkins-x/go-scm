@@ -1,12 +1,15 @@
 package factory
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/jenkins-x/go-scm/scm/transport"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewClient(t *testing.T) {
@@ -46,7 +49,106 @@ func TestFromRepoURL(t *testing.T) {
 	if client.Driver != scm.DriverGitlab {
 		t.Fatalf("Driver got %q, want %q", client.Driver, client.Driver)
 	}
-	if p := client.Client.Transport.(*transport.PrivateToken).Token; p != "abc123" {
-		t.Fatalf("got %q, want %q", p, "abc123")
+	assert.Equal(t, "abc123", sentRequest(t, client).Header.Get("Private-Token"))
+}
+
+// sentRequest issues a request through the client's transport and returns it as
+// the server saw it, carrying whatever credential the factory installed.
+func sentRequest(t *testing.T, client *scm.Client) *http.Request {
+	t.Helper()
+	var got *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		got = r
+	}))
+	defer srv.Close()
+
+	res, err := client.Client.Get(srv.URL)
+	require.NoError(t, err)
+	require.NoError(t, res.Body.Close())
+	return got
+}
+
+func TestNewClientWithTokenSource(t *testing.T) {
+	tests := []struct {
+		driver string
+		header string
+		want   string
+	}{
+		{driver: "github", header: "Authorization", want: "Bearer token-1"},
+		{driver: "gogs", header: "Authorization", want: "Bearer token-1"},
+		{driver: "stash", header: "Authorization", want: "Bearer token-1"},
+		{driver: "gitlab", header: "Private-Token", want: "token-1"},
 	}
+	for _, tc := range tests {
+		t.Run(tc.driver, func(t *testing.T) {
+			client, err := NewClientWithTokenSource(tc.driver, "https://example.com", &mintingSource{})
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, sentRequest(t, client).Header.Get(tc.header))
+		})
+	}
+}
+
+func TestNewClientWithTokenSource_Azure(t *testing.T) {
+	client, err := NewClientWithTokenSource("azure", "https://example.com", &mintingSource{})
+	require.NoError(t, err)
+
+	// Azure DevOps takes the token as the password with no username.
+	username, password, ok := sentRequest(t, client).BasicAuth()
+	require.True(t, ok)
+	assert.Empty(t, username)
+	assert.Equal(t, "token-1", password)
+}
+
+// TestNewClientWithTokenSource_Gitea covers the Gitea SDK's own http.Client as
+// well as scm.Client, since the driver serves calls from both.
+func TestNewClientWithTokenSource_Gitea(t *testing.T) {
+	var sdkAuth, clientAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/version" {
+			sdkAuth = r.Header.Get("Authorization")
+			fmt.Fprint(w, `{"version":"1.22.0"}`)
+			return
+		}
+		clientAuth = r.Header.Get("Authorization")
+	}))
+	defer srv.Close()
+
+	client, err := NewClientWithTokenSource("gitea", srv.URL, &mintingSource{})
+	require.NoError(t, err)
+
+	res, err := client.Client.Get(srv.URL)
+	require.NoError(t, err)
+	require.NoError(t, res.Body.Close())
+
+	assert.Equal(t, "token token-1", sdkAuth)
+	assert.Equal(t, "token token-2", clientAuth)
+}
+
+func TestNewClientWithTokenSource_BitbucketCloud(t *testing.T) {
+	client, err := NewClientWithTokenSource("bitbucketcloud", "", &mintingSource{}, SetUsername("bot"))
+	require.NoError(t, err)
+
+	username, password, ok := sentRequest(t, client).BasicAuth()
+	require.True(t, ok)
+	assert.Equal(t, "bot", username)
+	assert.Equal(t, "token-1", password)
+}
+
+func TestNewClientWithTokenSource_RefreshesToken(t *testing.T) {
+	client, err := NewClientWithTokenSource("github", "", &mintingSource{})
+	require.NoError(t, err)
+
+	assert.Equal(t, "Bearer token-1", sentRequest(t, client).Header.Get("Authorization"))
+	assert.Equal(t, "Bearer token-2", sentRequest(t, client).Header.Get("Authorization"))
+}
+
+// mintingSource issues a different token on each call, standing in for a source
+// of short lived credentials such as GitHub App installation tokens.
+type mintingSource struct {
+	calls int
+}
+
+func (s *mintingSource) Token(context.Context) (*scm.Token, error) {
+	s.calls++
+	return &scm.Token{Token: fmt.Sprintf("token-%d", s.calls)}, nil
 }
