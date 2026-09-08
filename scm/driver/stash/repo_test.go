@@ -7,6 +7,7 @@ package stash
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"testing"
 
@@ -421,11 +422,84 @@ func TestRepositoryService_FindCombinedStatus(t *testing.T) {
 	}
 }
 
-func TestStatusCreate(t *testing.T) {
+func TestStatusCreateWithParent(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("http://example.com:7990").
+		Post("/rest/api/latest/projects/PRJ/repos/my-repo/commits/a6e5e7d797edf751cbd839d6bd4aef86c941eec9/builds").
+		JSON(status{
+			State:  "SUCCESSFUL",
+			Key:    "build-parent/continuous-integration/drone/pull",
+			Name:   "continuous-integration/drone/pull",
+			URL:    "https://ci.example.com/1000/output",
+			Parent: "build-parent",
+			Desc:   "Build has completed successfully",
+		}).
+		Reply(204)
+
+	in := &scm.StatusInput{
+		Desc:   "Build has completed successfully",
+		Label:  "continuous-integration/drone/pull",
+		State:  scm.StateSuccess,
+		Link:   "https://ci.example.com/1000/output",
+		Parent: "build-parent",
+	}
+
+	client, _ := New("http://example.com:7990")
+	_, _, err := client.Repositories.CreateStatus(context.Background(), "PRJ/my-repo", "a6e5e7d797edf751cbd839d6bd4aef86c941eec9", in)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestStatusCreateWithParentEscapedRepository(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("http://example.com:7990").
+		Post("/rest/api/latest/projects/PRJ+special/repos/repo%2Fwith+chars/commits/a6e5e7d797edf751cbd839d6bd4aef86c941eec9/builds").
+		Map(func(req *http.Request) *http.Request {
+			req.URL.Path = req.URL.Opaque
+			return req
+		}).
+		JSON(status{
+			State:  "SUCCESSFUL",
+			Key:    "build-parent/continuous-integration/drone/pull",
+			Name:   "continuous-integration/drone/pull",
+			URL:    "https://ci.example.com/1000/output",
+			Parent: "build-parent",
+			Desc:   "Build has completed successfully",
+		}).
+		Reply(204)
+
+	in := &scm.StatusInput{
+		Desc:   "Build has completed successfully",
+		Label:  "continuous-integration/drone/pull",
+		State:  scm.StateSuccess,
+		Link:   "https://ci.example.com/1000/output",
+		Parent: "build-parent",
+	}
+
+	client, _ := New("http://example.com:7990")
+	_, _, err := client.Repositories.CreateStatus(context.Background(), "PRJ+special/repo/with+chars", "a6e5e7d797edf751cbd839d6bd4aef86c941eec9", in)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestStatusCreateWithoutParent(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("http://example.com:7990").
 		Post("/rest/build-status/1.0/commits/a6e5e7d797edf751cbd839d6bd4aef86c941eec9").
+		JSON(status{
+			State: "SUCCESSFUL",
+			Key:   "continuous-integration/drone/pull",
+			Name:  "continuous-integration/drone/pull",
+			URL:   "https://ci.example.com/1000/output",
+			Desc:  "Build has completed successfully",
+		}).
 		Reply(204)
 
 	in := &scm.StatusInput{
