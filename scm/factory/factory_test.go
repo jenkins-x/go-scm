@@ -152,3 +152,16 @@ func (s *mintingSource) Token(context.Context) (*scm.Token, error) {
 	s.calls++
 	return &scm.Token{Token: fmt.Sprintf("token-%d", s.calls)}, nil
 }
+
+func TestNewWebHookService(t *testing.T) {
+	for _, driver := range []string{"", "azure", "bitbucket", "bitbucketcloud", "gitea", "github", "gitlab", "gogs", "stash", "bitbucketserver"} {
+		t.Run(driver, func(t *testing.T) {
+			service, err := NewWebHookService(driver)
+			require.NoError(t, err)
+			assert.NotNil(t, service)
+		})
+	}
+
+	_, err := NewWebHookService("unknown")
+	assert.Error(t, err)
+}
