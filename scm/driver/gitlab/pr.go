@@ -27,7 +27,7 @@ func (s *pullService) Find(ctx context.Context, repo string, number int) (*scm.P
 	if err != nil {
 		return nil, res, err
 	}
-	convRepo, convRes, err := s.convertPullRequest(ctx, out)
+	convRepo, convRes, err := s.convertPullRequest(ctx, out, nil)
 	if err != nil {
 		return nil, convRes, err
 	}
@@ -228,7 +228,7 @@ func (s *pullService) Create(ctx context.Context, repo string, input *scm.PullRe
 	if err != nil {
 		return nil, res, err
 	}
-	convRepo, convRes, err := s.convertPullRequest(ctx, out)
+	convRepo, convRes, err := s.convertPullRequest(ctx, out, nil)
 	if err != nil {
 		return nil, convRes, err
 	}
@@ -293,7 +293,7 @@ func (s *pullService) updateMergeRequestField(ctx context.Context, repo string, 
 	if err != nil {
 		return nil, res, err
 	}
-	convRepo, convRes, err := s.convertPullRequest(ctx, out)
+	convRepo, convRes, err := s.convertPullRequest(ctx, out, nil)
 	if err != nil {
 		return nil, convRes, err
 	}
@@ -377,8 +377,11 @@ type pullRequestMergeRequest struct {
 
 func (s *pullService) convertPullRequestList(ctx context.Context, from []*pr) ([]*scm.PullRequest, *scm.Response, error) {
 	to := []*scm.PullRequest{}
+	// Merge requests in a listing nearly all name the same projects, so the
+	// project lookups are shared across the conversions.
+	projectsCache := map[int]*scm.Repository{}
 	for _, v := range from {
-		converted, res, err := s.convertPullRequest(ctx, v)
+		converted, res, err := s.convertPullRequest(ctx, v, projectsCache)
 		if err != nil {
 			return nil, res, err
 		}
@@ -387,7 +390,10 @@ func (s *pullService) convertPullRequestList(ctx context.Context, from []*pr) ([
 	return to, nil, nil
 }
 
-func (s *pullService) convertPullRequest(ctx context.Context, from *pr) (*scm.PullRequest, *scm.Response, error) {
+func (s *pullService) convertPullRequest(ctx context.Context, from *pr, projectsCache map[int]*scm.Repository) (*scm.PullRequest, *scm.Response, error) {
+	if projectsCache == nil {
+		projectsCache = map[int]*scm.Repository{}
+	}
 	// Diff refs only seem to be populated in more recent merge requests. Default
 	// to from.Sha for compatibility / consistency, but fallback to HeadSHA if
 	// it's not populated.
@@ -403,7 +409,7 @@ func (s *pullService) convertPullRequest(ctx context.Context, from *pr) (*scm.Pu
 		assignees = append(assignees, *convertUser(a))
 	}
 	var res *scm.Response
-	baseRepo, res, err := s.client.Repositories.Find(ctx, strconv.Itoa(from.TargetProjectID))
+	baseRepo, res, err := s.findProject(ctx, from.TargetProjectID, projectsCache)
 	if err != nil {
 		return nil, res, err
 	}
@@ -415,14 +421,10 @@ func (s *pullService) convertPullRequest(ctx context.Context, from *pr) (*scm.Pu
 		}
 		headRepo = repoCopy.(*scm.Repository)
 	} else {
-		headRepo, res, err = s.client.Repositories.Find(ctx, strconv.Itoa(from.SourceProjectID))
+		headRepo, res, err = s.findProject(ctx, from.SourceProjectID, projectsCache)
 		if err != nil {
 			return nil, res, err
 		}
-	}
-	sourceRepo, err := s.getSourceFork(ctx, from)
-	if err != nil {
-		return nil, res, err
 	}
 	return &scm.PullRequest{
 		Number:         from.Number,
@@ -458,18 +460,22 @@ func (s *pullService) convertPullRequest(ctx context.Context, from *pr) (*scm.Pu
 		},
 		Created: from.Created,
 		Updated: from.Updated,
-		Fork:    sourceRepo.PathNamespace,
+		// headRepo is the source project, so its FullName already holds the
+		// path_with_namespace this used to re-fetch the project for.
+		Fork: headRepo.FullName,
 	}, nil, nil
 }
 
-func (s *pullService) getSourceFork(ctx context.Context, from *pr) (repository, error) {
-	path := fmt.Sprintf("api/v4/projects/%d", from.SourceProjectID)
-	sourceRepo := repository{}
-	_, err := s.client.do(ctx, "GET", path, nil, &sourceRepo)
-	if err != nil {
-		return repository{}, err
+func (s *pullService) findProject(ctx context.Context, id int, projectsCache map[int]*scm.Repository) (*scm.Repository, *scm.Response, error) {
+	if repo, ok := projectsCache[id]; ok {
+		return repo, nil, nil
 	}
-	return sourceRepo, nil
+	repo, res, err := s.client.Repositories.Find(ctx, strconv.Itoa(id))
+	if err != nil {
+		return nil, res, err
+	}
+	projectsCache[id] = repo
+	return repo, res, nil
 }
 
 func convertPullRequestLabels(from []*string) []*scm.Label {
